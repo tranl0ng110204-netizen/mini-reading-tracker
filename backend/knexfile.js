@@ -16,9 +16,13 @@ export default {
   },
   production: {
     client: 'mysql2',
-    connection: process.env.DATABASE_URL,
+    connection: {
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    },
     migrations: {
       directory: './migrations'
-    }
+    },
+     seeds: { directory: './seeds' },
   }
 };
