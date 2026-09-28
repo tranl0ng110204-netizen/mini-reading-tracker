@@ -11,9 +11,13 @@ const app = express();
 
 // Middleware chung
 // CORS: neu co CORS_ORIGIN (vd khi deploy) thi chi cho phep cac origin do;
-// khong co (local dev) thi cho phep tat ca
+// khong co (local dev) thi cho phep tat ca.
+// Chuan hoa: trim khoang trang + bo '/' cuoi, vi trinh duoc gui Origin khong co '/' cuoi
 const corsOrigin = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',')
+  ? process.env.CORS_ORIGIN
+      .split(',')
+      .map((o) => o.trim().replace(/\/+$/, ''))
+      .filter(Boolean)
   : true;
 app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
