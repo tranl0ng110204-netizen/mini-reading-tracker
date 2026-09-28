@@ -4,8 +4,8 @@
 
 ## Demo
 
-- Frontend: https://your-app.vercel.app _(cập nhật sau khi deploy)_
-- Backend API: https://your-api.onrender.com _(cập nhật sau khi deploy)_
+- Frontend: https://mini-reading-tracker.vercel.app _(cập nhật sau khi deploy)_
+- Backend API: https://mini-reading-tracker.onrender.com _(cập nhật sau khi deploy)_
 
 ## Tech Stack
 
