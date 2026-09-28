@@ -1,5 +1,20 @@
 import 'dotenv/config';
 
+// mysql2 khong hieu 'connectionString' va cung khong tu bat SSL tu
+// query param 'ssl-mode=REQUIRED' cua Aiven -> tu parse DATABASE_URL
+// thanh object chuan cua mysql2 va bat ssl tuong minh
+const parseDatabaseUrl = (url) => {
+  const u = new URL(url);
+  return {
+    host: u.hostname,
+    port: Number(u.port) || 3306,
+    user: decodeURIComponent(u.username),
+    password: decodeURIComponent(u.password),
+    database: u.pathname.replace(/^\//, ''),
+    ssl: { rejectUnauthorized: false },
+  };
+};
+
 export default {
   development: {
     client: 'mysql2',
@@ -16,13 +31,10 @@ export default {
   },
   production: {
     client: 'mysql2',
-    connection: {
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-    },
+    connection: parseDatabaseUrl(process.env.DATABASE_URL),
     migrations: {
       directory: './migrations'
     },
-     seeds: { directory: './seeds' },
+    seeds: { directory: './seeds' },
   }
 };
