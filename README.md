@@ -82,13 +82,16 @@ Base URL: `http://localhost:3000/api`
 
 ## Business Rules (state machine)
 
-1. **Tự hoàn thành:** `current_page === total_pages && total_pages > 0` → tự set `status = READ` + `completed_at`.
-2. **Chuyển trạng thái:**
-   - `WANT_TO_READ → READING`: set `started_at = now()`
-   - `→ READ`: set `completed_at = now()`, `current_page = total_pages`, set `started_at` nếu chưa có
-   - `READ → READING` (đọc lại): xóa `completed_at = null`
-3. **Sách không rõ số trang** (`total_pages = 0`): không có thanh tiến độ, không auto-READ — người dùng tự chuyển trạng thái.
-4. **Validate:** `status` phải thuộc enum (400 nếu sai); `0 <= current_page <= total_pages` (400); `rating` là số nguyên 1–5 hoặc null; thêm trùng `work_id` → 409.
+**Bất biến:** `WANT_TO_READ` ⇒ `current_page = 0` và `started_at = completed_at = null` — sách chưa đọc thì không thể có tiến độ.
+
+1. **Trạng thái suy ra từ tiến độ** (khi PATCH có `current_page`):
+   - `current_page === total_pages && total_pages > 0` → `READ` + `completed_at = now()`
+   - `0 < current_page < total_pages` → `READING` + `started_at = now()` nếu chưa có, xóa `completed_at` nếu đang `READ` (trường hợp đọc lại)
+   - `current_page = 0` → không đủ căn cứ, giữ nguyên trạng thái
+2. **Ưu tiên:** `status` gửi lên chỉ thắng khi nó là **thay đổi thật sự**. Frontend chỉ gửi `status` khi người dùng chủ động đổi dropdown; nếu để nguyên thì tiến độ quyết định. Riêng `status = WANT_TO_READ` luôn thắng và reset `current_page = 0` + xóa 2 mốc thời gian.
+3. **Mốc thời gian chỉ cập nhật khi trạng thái thật sự đổi** — sửa mỗi `note`/`rating` của sách `READ` sẽ không đẩy `completed_at` lên.
+4. **Sách không rõ số trang** (`total_pages = 0`): không có thanh tiến độ, không auto-`READ`; nhập `current_page > 0` vẫn suy ra `READING`.
+5. **Validate:** `status` phải thuộc enum (400 nếu sai); `0 <= current_page <= total_pages` (400); `rating` là số nguyên 1–5 hoặc null; thêm trùng `work_id` → 409.
 
 ## Chạy local
 

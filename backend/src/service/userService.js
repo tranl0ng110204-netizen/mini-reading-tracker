@@ -38,38 +38,55 @@ export const addBook = async (bookData) => {
   return await getBookById(id);
 };
 
+// Suy ra trang thai tu so trang da doc:
+// full trang = READ, co tien do = READING, chua doc trang nao = khong du de ket luan
+const deriveStatusFromProgress = (page, totalPages) => {
+  if (totalPages > 0 && page === totalPages) return 'READ';
+  if (page > 0) return 'READING';
+  return null;
+};
+
 // Cap nhat tien do cua cuon sach
 export const updateBook = async (id, currentBook, updateData) => {
-  let { status, current_page, rating, note } = updateData;
+  const { rating, note } = updateData;
+  let { status, current_page } = updateData;
   let started_at = currentBook.started_at;
   let completed_at = currentBook.completed_at;
 
-  // LOGIC 1: Tu dong chuyen Da doc neu so trang hien tai = tong so trang
-  if (current_page !== undefined && current_page === currentBook.total_pages && currentBook.total_pages > 0) {
-    status = 'READ';
-  }
-
-  // LOGIC 2: Xu ly thay doi thoi gian (State Machine)
-  if (status && status !== currentBook.status) {
-    // Tu "Muon doc" -> "Dang doc"
-    if (status === 'READING' && currentBook.status === 'WANT_TO_READ') {
-      started_at = db.fn.now();
+  if (status === 'WANT_TO_READ') {
+    // Chua doc thi khong the co tien do hay thoi diem bat dau
+    current_page = 0;
+    started_at = null;
+    completed_at = null;
+  } else {
+    // Tien do quyet dinh trang thai (uu tien hon status gui len),
+    // tru khi nguoi dung chu dong chon WANT_TO_READ (nhanh tren)
+    if (current_page !== undefined) {
+      const derived = deriveStatusFromProgress(current_page, currentBook.total_pages);
+      if (derived) status = derived;
     }
-    // Chuyen sang "Da doc"
-    if (status === 'READ') {
+
+    const nextStatus = status !== undefined ? status : currentBook.status;
+    const statusChanged = nextStatus !== currentBook.status;
+
+    // Chi cap nhat moc thoi gian khi trang thai that su doi,
+    // tranh day completed_at len moi lan chi sua note/rating
+    if (statusChanged && nextStatus === 'READ') {
+      if (currentBook.total_pages > 0) current_page = currentBook.total_pages;
       completed_at = db.fn.now();
       if (!started_at) started_at = db.fn.now();
-      current_page = currentBook.total_pages;
     }
-    // Lui tu "Da doc" ve "Dang doc"
-    if (status === 'READING' && currentBook.status === 'READ') {
+    if (statusChanged && nextStatus === 'READING') {
       completed_at = null;
+      if (!started_at) started_at = db.fn.now();
     }
+
+    status = nextStatus;
   }
 
   // Thuc thi Update
   await db('library_books').where({ id }).update({
-    status: status !== undefined ? status : currentBook.status,
+    status,
     current_page: current_page !== undefined ? current_page : currentBook.current_page,
     rating: rating !== undefined ? rating : currentBook.rating,
     note: note !== undefined ? note : currentBook.note,

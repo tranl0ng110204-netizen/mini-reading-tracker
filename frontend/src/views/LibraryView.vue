@@ -180,11 +180,11 @@
               :placeholder="hasProgress(editingBook) ? `0 - ${editingBook.total_pages}` : 'Không rõ tổng số trang'"
             />
             <a-typography-text
-              v-if="hasProgress(editingBook) && form.current_page === editingBook.total_pages"
-              type="success"
+              v-if="progressHint"
+              :type="progressHint.type"
               style="font-size: 12px; display: block; margin-top: 4px;"
             >
-              Đã đọc xong — trạng thái sẽ tự động chuyển thành "Đã đọc".
+              {{ progressHint.text }}
             </a-typography-text>
           </a-form-item>
 
@@ -213,7 +213,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import {
   BookOutlined,
@@ -271,6 +271,30 @@ const fetchLibrary = async () => {
   }
 }
 
+// Backend tu suy trang thai theo tien do, nen bao truoc cho nguoi dung
+const progressHint = computed(() => {
+  const book = editingBook.value
+  if (!book) return null
+  if (form.status === 'WANT_TO_READ' && book.status !== 'WANT_TO_READ') {
+    return { type: 'warning', text: 'Chuyển về "Muốn đọc" sẽ đặt số trang đã đọc về 0.' }
+  }
+  if (hasProgress(book) && form.current_page === book.total_pages) {
+    return { type: 'success', text: 'Đã đọc xong — trạng thái sẽ tự chuyển thành "Đã đọc".' }
+  }
+  if (form.current_page > 0 && form.status === 'WANT_TO_READ') {
+    return { type: 'secondary', text: 'Có tiến độ — trạng thái sẽ tự chuyển thành "Đang đọc".' }
+  }
+  return null
+})
+
+// Giu dung bat bien: muon doc thi khong co tien do
+watch(
+  () => form.status,
+  (val) => {
+    if (val === 'WANT_TO_READ') form.current_page = 0
+  }
+)
+
 const openEditModal = (book) => {
   editingBook.value = book
   form.status = book.status
@@ -284,12 +308,16 @@ const handleSave = async () => {
   const book = editingBook.value
   saving.value = true
   try {
-    const res = await updateBook(book.id, {
-      status: form.status,
+    const payload = {
       current_page: form.current_page ?? 0,
       rating: form.rating || null,
       note: form.note,
-    })
+    }
+    // Chi gui status khi nguoi dung chu dong doi, de tien do quyet dinh
+    // trang thai trong truong hop de nguyen dropdown
+    if (form.status !== book.status) payload.status = form.status
+
+    const res = await updateBook(book.id, payload)
     const index = library.value.findIndex((b) => b.id === book.id)
     if (index !== -1) library.value[index] = res.data
 
