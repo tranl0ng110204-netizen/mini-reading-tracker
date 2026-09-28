@@ -90,7 +90,7 @@ Base URL: `http://localhost:3000/api`
    - `current_page = 0` → không đủ căn cứ, giữ nguyên trạng thái
 2. **Ưu tiên:** `status` gửi lên chỉ thắng khi nó là **thay đổi thật sự**. Frontend chỉ gửi `status` khi người dùng chủ động đổi dropdown; nếu để nguyên thì tiến độ quyết định. Riêng `status = WANT_TO_READ` luôn thắng và reset `current_page = 0` + xóa 2 mốc thời gian.
 3. **Mốc thời gian chỉ cập nhật khi trạng thái thật sự đổi** — sửa mỗi `note`/`rating` của sách `READ` sẽ không đẩy `completed_at` lên.
-4. **Sách không rõ số trang** (`total_pages = 0`): không có thanh tiến độ, không auto-`READ`; nhập `current_page > 0` vẫn suy ra `READING`.
+4. **Sách không rõ số trang** (`total_pages = 0`, Open Library thiếu dữ liệu): không có thanh tiến độ %, không auto-`READ`. Vẫn **nhập được số trang đã đọc** (không giới hạn max) và `current_page > 0` vẫn suy ra `READING`; UI hiển thị dạng "Đã đọc X trang" thay vì `X / Y`. Chọn `READ` thủ công thì giữ nguyên `current_page` (không ép bằng `total_pages` vì không có giá trị đó).
 5. **Validate:** `status` phải thuộc enum (400 nếu sai); `0 <= current_page <= total_pages` (400); `rating` là số nguyên 1–5 hoặc null; thêm trùng `work_id` → 409.
 
 ## Chạy local

@@ -117,6 +117,13 @@
                       :show-info="false"
                     />
                   </template>
+                  <template v-else-if="book.current_page > 0">
+                    <a-tooltip title="Open Library không có tổng số trang nên không tính được %">
+                      <a-typography-text type="secondary" style="font-size: 12px;">
+                        Đã đọc {{ book.current_page }} trang
+                      </a-typography-text>
+                    </a-tooltip>
+                  </template>
                   <a-tooltip v-else title="Open Library không có số trang cho sách này">
                     <a-typography-text type="secondary" style="font-size: 12px;">
                       Không theo dõi được tiến độ
@@ -175,9 +182,8 @@
               v-model:value="form.current_page"
               :min="0"
               :max="hasProgress(editingBook) ? editingBook.total_pages : undefined"
-              :disabled="!hasProgress(editingBook)"
               style="width: 100%;"
-              :placeholder="hasProgress(editingBook) ? `0 - ${editingBook.total_pages}` : 'Không rõ tổng số trang'"
+              :placeholder="hasProgress(editingBook) ? `0 - ${editingBook.total_pages}` : 'Số trang đã đọc'"
             />
             <a-typography-text
               v-if="progressHint"
@@ -283,6 +289,12 @@ const progressHint = computed(() => {
   }
   if (form.current_page > 0 && form.status === 'WANT_TO_READ') {
     return { type: 'secondary', text: 'Có tiến độ — trạng thái sẽ tự chuyển thành "Đang đọc".' }
+  }
+  if (!hasProgress(book)) {
+    return {
+      type: 'secondary',
+      text: 'Không rõ tổng số trang — chỉ ghi nhận số trang đã đọc, không tính % và không tự chuyển "Đã đọc".',
+    }
   }
   return null
 })

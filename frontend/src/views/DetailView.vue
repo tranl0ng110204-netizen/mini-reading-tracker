@@ -60,6 +60,13 @@
               />
             </div>
 
+            <div v-else-if="libraryBook.current_page > 0" class="progress-box">
+              <a-typography-text type="secondary" style="font-size: 13px;">
+                Đã đọc {{ libraryBook.current_page }} trang
+                <span style="font-size: 12px;">(không rõ tổng số trang nên không tính được %)</span>
+              </a-typography-text>
+            </div>
+
             <div v-if="libraryBook.rating" style="text-align: center; margin-top: 8px;">
               <a-rate :value="libraryBook.rating" disabled style="font-size: 16px;" />
             </div>
